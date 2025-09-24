@@ -17,13 +17,4 @@ dev *options:
         {{options}}
 
 js *options:
-  ./node_modules/.bin/esbuild \
-    frontend/form.tsx \
-    --bundle \
-    --minify \
-    --format=esm \
-    --alias:react=preact/compat \
-    --jsx-factory=h \
-    --jsx-fragment=Fragment \
-    --outfile=datasette_jsonschema_forms/static/form.min.js \
-    {{options}}
+  just frontend/dev {{options}}
