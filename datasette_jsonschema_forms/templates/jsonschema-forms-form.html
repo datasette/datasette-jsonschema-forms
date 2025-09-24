@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block extra_head %}
+{% endblock %}
+
+{% block content %}
+  <main>
+    <div id="app"></div>
+  </main>
+  <script type="module">
+    import({{js_url | tojson }})
+    .then((module) => module.default({{ params | tojson }}));
+
+  </script>
+{% endblock %}
