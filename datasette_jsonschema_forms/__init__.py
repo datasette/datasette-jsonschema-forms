@@ -3,7 +3,8 @@ from sqlite_utils import Database
 from .internal_migrations import internal_migrations
 from . import routes
 from . import contract
-__all__ = ["contract"]
+
+__all__ = ["contract", "routes"]
 
 @hookimpl
 def menu_links(datasette):
