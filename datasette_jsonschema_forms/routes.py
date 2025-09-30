@@ -1,11 +1,12 @@
 from datasette import Response, Forbidden
-from .internal_db import InternalDB, NewFormParams
-import json
+from .internal_db import InternalDB
+from .contract import ApiNewParams, UiFormParams, UiIndexParams
 from functools import wraps
 
 PERMISSION_ACCESS_NAME = "datasette-jsonschema-forms-access"
 
-def check_permission(permission):
+
+def _check_permission(permission):
     """Decorator to check if the request actor has the given permission."""
     def decorator(func):
         @wraps(func)
@@ -19,65 +20,80 @@ def check_permission(permission):
         return wrapper
     return decorator
 
+async def _render_base(datasette, request, js_file: str, params: dict | None = None, css_file=None):
+    return await datasette.render_template(
+        "jsonschema-forms-base.html",
+        request=request,
+        context={
+            "js_url": datasette.urls.static_plugins(
+                "datasette-jsonschema-forms", js_file
+            ),
+            "params": params,
+            "css_url": datasette.urls.static_plugins(
+                "datasette-jsonschema-forms", css_file
+            )
+            if css_file
+            else None,
+        },
+    )
 
-@check_permission(PERMISSION_ACCESS_NAME)
+@_check_permission(PERMISSION_ACCESS_NAME)
 async def ui_index(scope, receive, datasette, request):
     db = InternalDB(datasette.get_internal_database())
     forms = await db.list_forms()
+    params = UiIndexParams(forms=forms)
     return Response.html(
-        await datasette.render_template(
-            "jsonschema-forms-index.html",
+        await _render_base(
+            datasette=datasette,
             request=request,
-            context={"forms": forms},
-        )
+            js_file="index.min.js",
+            params=params.model_dump(),
+        ),
     )
 
-@check_permission(PERMISSION_ACCESS_NAME)
+
+@_check_permission(PERMISSION_ACCESS_NAME)
 async def ui_new(scope, receive, datasette, request):
     return Response.html(
-        await datasette.render_template(
-            "jsonschema-forms-new.html",
+        await _render_base(
+            datasette=datasette,
             request=request,
-        )
-    )
-
-@check_permission(PERMISSION_ACCESS_NAME)
-async def ui_edit(scope, receive, datasette, request):
-    return Response.html(
-        await datasette.render_template(
-            "jsonschema-forms-edit.html",
-            request=request,
-        )
+            js_file="new.min.js",
+            css_file="new.min.css",
+        ),
     )
 
 
-@check_permission(PERMISSION_ACCESS_NAME)
+@_check_permission(PERMISSION_ACCESS_NAME)
 async def ui_form(scope, receive, datasette, request):
     db = InternalDB(datasette.get_internal_database())
     form_name = request.url_vars["name"]
     form = await db.get_form(form_name)
+    if not form:
+        return Response.text("Form not found", status=404)
+    
+    params = UiFormParams(
+        form_name=form_name,
+        schema=form["json_schema"],
+        database_name=form["database_name"],
+        table_name=form["table_name"],
+    )
     return Response.html(
-        await datasette.render_template(
-            "jsonschema-forms-form.html",
+        await _render_base(
+            datasette=datasette,
             request=request,
-            context={
-                "js_url": datasette.urls.static_plugins("datasette-jsonschema-forms", "form.min.js"),
-                "params": {
-                    "form_name": form_name,
-                    "schema": json.loads(form["json_schema"]),
-                    "database_name": form["database_name"],
-                    "table_name": form["table_name"],
-                }
-            },
+            js_file="form.min.js",
+            params=params.model_dump(),
         )
     )
 
-@check_permission(PERMISSION_ACCESS_NAME)
+
+@_check_permission(PERMISSION_ACCESS_NAME)
 async def api_new(scope, receive, datasette, request):
     if request.method != "POST":
         return Response.text("", status=405)
     try:
-        params: NewFormParams = NewFormParams.model_validate_json(
+        params: ApiNewParams = ApiNewParams.model_validate_json(
             await request.post_body()
         )
     except ValueError:
@@ -85,9 +101,4 @@ async def api_new(scope, receive, datasette, request):
 
     db = InternalDB(datasette.get_internal_database())
     await db.new_form(params, request.actor["id"])
-
     return Response.json({"ok": True})
-
-@check_permission(PERMISSION_ACCESS_NAME)
-async def api_edit(scope, receive, datasette, request):
-    return Response.text("Not implemented yet")

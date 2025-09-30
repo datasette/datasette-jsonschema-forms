@@ -1,4 +1,7 @@
-dev *options:
+dev_db:
+  sqlite3 tmp.db < tests/schema.sql
+
+dev *options: dev_db
   DATASETTE_SECRET=abc123 \
   watchexec \
     --stop-signal SIGKILL \
@@ -14,6 +17,7 @@ dev *options:
         --root \
         -s permissions.datasette-jsonschema-forms-access.id root \
         tmp.db \
+        --internal tmp.internal.db \
         {{options}}
 
 js *options:

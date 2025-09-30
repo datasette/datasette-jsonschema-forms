@@ -1,12 +1,22 @@
 from datasette.database import Database
 from pydantic import BaseModel
 
+
 class NewFormParams(BaseModel):
     name: str
     schema: str
     database_name: str
     table_name: str
 
+class ListFormsResult(BaseModel):
+    id: int
+    created_at: str
+    creator_actor_id: str | None
+    last_edited_at: str | None
+    name: str
+    json_schema: str
+    database_name: str
+    table_name: str
 
 class InternalDB:
     def __init__(self, internal_db: Database):
@@ -32,19 +42,46 @@ class InternalDB:
 
         return await self.db.execute_write_fn(write)
 
-    async def list_forms(self):
+    async def list_forms(self)-> list[ListFormsResult]:
         results = await self.db.execute(
             """
-            select * from datasette_jsonschema_forms
+            select 
+              id,
+              created_at,
+              creator_actor_id,
+              last_edited_at,
+              name,
+              json_schema,
+              database_name,
+              table_name
+            from datasette_jsonschema_forms
             order by last_edited_at desc, created_at desc
             """
         )
-        return [dict(row) for row in results]
+        return [ListFormsResult(
+            id=row["id"],
+            created_at=row["created_at"],
+            creator_actor_id=row["creator_actor_id"],
+            last_edited_at=row["last_edited_at"],
+            name=row["name"],
+            json_schema=row["json_schema"],
+            database_name=row["database_name"],
+            table_name=row["table_name"],
+        ) for row in results]
 
     async def get_form(self, name: str):
         results = await self.db.execute(
             """
-            select * from datasette_jsonschema_forms
+            select 
+              id,
+              created_at,
+              creator_actor_id,
+              last_edited_at,
+              name,
+              json_schema,
+              database_name,
+              table_name
+            from datasette_jsonschema_forms
             where name = ?
             """,
             (name,),

@@ -7,6 +7,11 @@
   <main>
     <div id="app"></div>
   </main>
+  
+  {% if css_url %}
+    <link rel="stylesheet" href="{{css_url}}">
+  {% endif %}
+  
   <script type="module">
     import({{js_url | tojson }})
     .then((module) => module.default({{ params | tojson }}));

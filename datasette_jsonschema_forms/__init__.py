@@ -2,6 +2,8 @@ from datasette import hookimpl
 from sqlite_utils import Database
 from .internal_migrations import internal_migrations
 from . import routes
+from . import contract
+__all__ = ["contract"]
 
 @hookimpl
 def menu_links(datasette):
@@ -12,6 +14,7 @@ def menu_links(datasette):
         }
     ]
 
+
 @hookimpl
 async def startup(datasette):
     def migrate(connection):
@@ -20,13 +23,12 @@ async def startup(datasette):
 
     await datasette.get_internal_database().execute_write_fn(migrate)
 
+
 @hookimpl
 def register_routes():
     return [
         (r"^/-/jsonschema-forms$", routes.ui_index),
         (r"^/-/jsonschema-forms/new$", routes.ui_new),
-        (r"^/-/jsonschema-forms/edit$", routes.ui_edit),
         (r"^/-/jsonschema-forms/form/(?P<name>.*)$", routes.ui_form),
         (r"^/-/jsonschema-forms/api/new$", routes.api_new),
-        (r"^/-/jsonschema-forms/api/edit$", routes.api_edit),
     ]

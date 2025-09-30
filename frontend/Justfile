@@ -1,11 +1,18 @@
+contract:
+  uv run ../scripts/pydantic-to-jsonschema.py \
+  |  node ../scripts/json-schema-to-typescript.mjs \
+  > contract.d.ts
+
 dev *options:
   node_modules/.bin/esbuild \
-    form.tsx \
     --bundle \
     --minify \
     --format=esm \
     --alias:react=preact/compat \
     --jsx-factory=h \
     --jsx-fragment=Fragment \
-    --outfile=../datasette_jsonschema_forms/static/form.min.js \
+    --out-extension:.js=.min.js \
+    --out-extension:.css=.min.css \
+    targets/*.tsx \
+    --outdir=../datasette_jsonschema_forms/static/ \
     {{options}}
