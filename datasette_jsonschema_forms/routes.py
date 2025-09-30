@@ -1,3 +1,4 @@
+from typing import Optional
 from datasette import Response, Forbidden
 from .internal_db import InternalDB
 from .contract import ApiNewParams, UiFormParams, UiIndexParams
@@ -20,7 +21,7 @@ def _check_permission(permission):
         return wrapper
     return decorator
 
-async def _render_base(datasette, request, js_file: str, params: dict | None = None, css_file=None):
+async def _render_base(datasette, request, js_file: str, params: Optional[dict] = None, css_file=None):
     return await datasette.render_template(
         "jsonschema-forms-base.html",
         request=request,
