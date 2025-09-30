@@ -1,6 +1,6 @@
 from datasette.database import Database
 from pydantic import BaseModel
-
+from typing import Optional
 
 class NewFormParams(BaseModel):
     name: str
@@ -11,8 +11,8 @@ class NewFormParams(BaseModel):
 class ListFormsResult(BaseModel):
     id: int
     created_at: str
-    creator_actor_id: str | None
-    last_edited_at: str | None
+    creator_actor_id: Optional[str]
+    last_edited_at: Optional[str]
     name: str
     json_schema: str
     database_name: str
